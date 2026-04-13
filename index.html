@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retorika - Configura tu sesión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f7fe; }
+        .sidebar { background-color: #1a2b56; }
+        .card { background: white; border-radius: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
+        .btn-navy { background-color: #0d1b3e; color: white; }
+        /* Clases para estados de botones */
+        .btn-mode-inactive { background-color: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); }
+        .btn-mode-active { background-color: white; color: #1a2b56; }
+        
+        .time-input { background: rgba(255,255,255,0.1); border: none; border-radius: 0.5rem; width: 60px; height: 45px; text-align: center; font-size: 1.25rem; font-weight: bold; color: white; }
+        
+        /* Animación suave para ocultar el selector */
+        #selectorTiempo { transition: all 0.3s ease-in-out; }
+        .hidden-element { opacity: 0; pointer-events: none; transform: translateY(-10px); }
+    </style>
+</head>
+<body class="flex min-h-screen">
+
+    <aside class="sidebar w-[320px] text-white p-8 flex flex-col shrink-0">
+        <div class="flex items-center gap-2 mb-12">
+            <div class="bg-white text-[#1a2b56] font-bold w-7 h-7 flex items-center justify-center rounded text-sm">R</div>
+            <span class="tracking-widest text-xs font-bold opacity-60 uppercase">Retorika</span>
+        </div>
+
+        <h1 class="text-2xl font-bold leading-tight mb-1">Cronómetro Inteligente</h1>
+        <p class="text-blue-300/50 text-[11px] mb-8 font-medium">Entrenador de intervenciones políticas</p>
+
+        <div class="flex gap-2 mb-12">
+            <button id="btnAsc" onclick="setMode('asc')" class="btn-mode-inactive text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase transition-all">
+                ▲ Ascendente
+            </button>
+            <button id="btnReg" onclick="setMode('reg')" class="btn-mode-active text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase transition-all">
+                ▼ Regresivo
+            </button>
+        </div>
+
+        <div class="flex justify-center mb-6">
+            <div class="relative w-44 h-44 border-4 border-dashed border-white/10 rounded-full flex flex-col items-center justify-center">
+                <span id="timerDisplay" class="text-4xl font-bold tracking-tighter">03:00</span>
+                <span id="statusLabel" class="text-[9px] font-bold tracking-[0.2em] text-blue-400 mt-2 uppercase">Temporizador</span>
+            </div>
+        </div>
+
+        <div id="selectorTiempo" class="flex items-center justify-center gap-3 mb-8 transition-all duration-300">
+            <input type="number" id="minInput" value="03" min="0" max="99" class="time-input" onchange="updateFromInputs()">
+            <span class="text-white/30 font-bold">:</span>
+            <input type="number" id="secInput" value="00" min="0" max="59" class="time-input" onchange="updateFromInputs()">
+        </div>
+
+        <div class="flex justify-center gap-3 mb-10">
+            <button onclick="resetTimer()" class="bg-white/10 p-3 rounded-xl hover:bg-white/20">↺</button>
+            <button id="startBtn" onclick="toggleTimer()" class="bg-white text-[#1a2b56] px-8 py-3 rounded-xl font-bold text-xs uppercase shadow-lg">Start</button>
+        </div>
+
+        <div class="mt-auto">
+            <p class="text-[9px] uppercase tracking-widest text-blue-300/40 mb-4 font-bold">Tiempos Guardados</p>
+            <div id="presetList" class="space-y-1 text-xs"></div>
+            <button onclick="saveCurrentAsPreset()" class="text-blue-400/60 text-[10px] font-bold mt-4 ml-3 hover:text-white transition-colors">+ Guardar tiempo</button>
+        </div>
+    </aside>
+
+    <main class="flex-1 p-12 overflow-y-auto">
+        <div class="max-w-5xl mx-auto">
+            <header class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold text-[#0d1b3e]">Configura tu sesión</h2>
+            </header>
+            <section class="card p-8">
+                <div class="text-slate-300 text-[10px] font-bold uppercase mb-4">✏️ Tema de Práctica</div>
+                <h3 id="temaDisplay" class="text-xl font-bold text-[#0d1b3e] mb-8 italic">"Política de vivienda asequible en municipios pequeños"</h3>
+                <button class="btn-navy px-8 py-3 rounded-xl text-xs font-bold">🎲 Generar nuevo tema</button>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        let timer;
+        let seconds = 180; 
+        let isRunning = false;
+        let mode = 'reg'; 
+        let presets = [
+            { name: "Pleno municipal", time: 180 },
+            { name: "Rueda de prensa", time: 300 }
+        ];
+
+        window.onload = () => { renderPresets(); updateFromInputs(); };
+
+        function setMode(newMode) {
+            clearInterval(timer);
+            isRunning = false;
+            mode = newMode;
+            document.getElementById('startBtn').innerText = 'Start';
+            
+            const btnAsc = document.getElementById('btnAsc');
+            const btnReg = document.getElementById('btnReg');
+            const selector = document.getElementById('selectorTiempo');
+            const label = document.getElementById('statusLabel');
+
+            if (mode === 'asc') {
+                // Intercambiar estilos de botones
+                btnAsc.className = "btn-mode-active text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase transition-all";
+                btnReg.className = "btn-mode-inactive text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase transition-all";
+                
+                // Ocultar selector de tiempo
+                selector.style.opacity = "0";
+                selector.style.pointerEvents = "none";
+                
+                seconds = 0;
+                label.innerText = "Cronómetro";
+            } else {
+                // Intercambiar estilos de botones
+                btnReg.className = "btn-mode-active text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase transition-all";
+                btnAsc.className = "btn-mode-inactive text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase transition-all";
+                
+                // Mostrar selector de tiempo
+                selector.style.opacity = "1";
+                selector.style.pointerEvents = "auto";
+                
+                updateFromInputs();
+                label.innerText = "Temporizador";
+            }
+            renderTime();
+        }
+
+        function updateFromInputs() {
+            if (mode === 'reg' && !isRunning) {
+                const m = parseInt(document.getElementById('minInput').value) || 0;
+                const s = parseInt(document.getElementById('secInput').value) || 0;
+                seconds = (m * 60) + s;
+                renderTime();
+            }
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('startBtn');
+            if (isRunning) {
+                clearInterval(timer);
+                btn.innerText = 'Start';
+            } else {
+                btn.innerText = 'Pause';
+                timer = setInterval(() => {
+                    mode === 'reg' ? seconds-- : seconds++;
+                    renderTime();
+                }, 1000);
+            }
+            isRunning = !isRunning;
+        }
+
+        function renderTime() {
+            const display = document.getElementById('timerDisplay');
+            const absSecs = Math.abs(seconds);
+            const m = Math.floor(absSecs / 60);
+            const s = absSecs % 60;
+            display.innerText = `${seconds < 0 ? '-' : ''}${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+            // Feedback visual Fucsia
+            display.style.color = (mode === 'reg' && seconds < 0) ? '#ff00ff' : 'white';
+        }
+
+        function resetTimer() {
+            clearInterval(timer);
+            isRunning = false;
+            document.getElementById('startBtn').innerText = 'Start';
+            mode === 'reg' ? updateFromInputs() : (seconds = 0);
+            renderTime();
+        }
+
+        function renderPresets() {
+            const list = document.getElementById('presetList');
+            list.innerHTML = presets.map((p, i) => `
+                <div class="flex justify-between py-2 px-3 hover:bg-white/5 rounded-lg cursor-pointer group">
+                    <span onclick="applyPreset(${p.time})">${p.name}</span>
+                    <span class="font-bold opacity-40">${Math.floor(p.time/60)}:00</span>
+                </div>
+            `).join('');
+        }
+
+        function applyPreset(t) {
+            document.getElementById('minInput').value = String(Math.floor(t/60)).padStart(2, '0');
+            document.getElementById('secInput').value = '00';
+            setMode('reg');
+        }
+
+        function saveCurrentAsPreset() {
+            const name = prompt("Nombre para este tiempo:");
+            if (name) {
+                const m = parseInt(document.getElementById('minInput').value) || 0;
+                const s = parseInt(document.getElementById('secInput').value) || 0;
+                presets.push({ name, time: (m*60)+s });
+                renderPresets();
+            }
+        }
+    </script>
+</body>
+</html>
