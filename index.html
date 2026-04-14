@@ -10,16 +10,31 @@
         body { font-family: 'Inter', sans-serif; background-color: #f4f7fe; }
         .sidebar { background-color: #1a2b56; }
         .card { background: white; border-radius: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
-        .btn-navy { background-color: #0d1b3e; color: white; }
-        /* Clases para estados de botones */
         .btn-mode-inactive { background-color: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); }
         .btn-mode-active { background-color: white; color: #1a2b56; }
-        
         .time-input { background: rgba(255,255,255,0.1); border: none; border-radius: 0.5rem; width: 60px; height: 45px; text-align: center; font-size: 1.25rem; font-weight: bold; color: white; }
+        /* Estilo para las píldoras de categorías */
+        .status-pill { 
+            background: #eef2ff; 
+            color: #6366f1; 
+            padding: 6px 16px; 
+            border-radius: 999px; 
+            font-size: 0.75rem; 
+            font-weight: 500; 
+            cursor: pointer; 
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .status-pill:hover {
+            background: #e0e7ff;
+        }
         
-        /* Animación suave para ocultar el selector */
-        #selectorTiempo { transition: all 0.3s ease-in-out; }
-        .hidden-element { opacity: 0; pointer-events: none; transform: translateY(-10px); }
+        .status-pill.active { 
+            background: #0d1b3e !important; 
+            color: white !important; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
 <body class="flex min-h-screen">
@@ -30,16 +45,9 @@
             <span class="tracking-widest text-xs font-bold opacity-60 uppercase">Retorika</span>
         </div>
 
-        <h1 class="text-2xl font-bold leading-tight mb-1">Cronómetro Inteligente</h1>
-        <p class="text-blue-300/50 text-[11px] mb-8 font-medium">Entrenador de intervenciones políticas</p>
-
         <div class="flex gap-2 mb-12">
-            <button id="btnAsc" onclick="setMode('asc')" class="btn-mode-inactive text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase transition-all">
-                ▲ Ascendente
-            </button>
-            <button id="btnReg" onclick="setMode('reg')" class="btn-mode-active text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase transition-all">
-                ▼ Regresivo
-            </button>
+            <button id="btnAsc" onclick="setMode('asc')" class="btn-mode-inactive text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase transition-all">▲ Ascendente</button>
+            <button id="btnReg" onclick="setMode('reg')" class="btn-mode-active text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase transition-all">▼ Regresivo</button>
         </div>
 
         <div class="flex justify-center mb-6">
@@ -50,20 +58,20 @@
         </div>
 
         <div id="selectorTiempo" class="flex items-center justify-center gap-3 mb-8 transition-all duration-300">
-            <input type="number" id="minInput" value="03" min="0" max="99" class="time-input" onchange="updateFromInputs()">
+            <input type="number" id="minInput" value="03" class="time-input" onchange="updateFromInputs()">
             <span class="text-white/30 font-bold">:</span>
-            <input type="number" id="secInput" value="00" min="0" max="59" class="time-input" onchange="updateFromInputs()">
+            <input type="number" id="secInput" value="00" class="time-input" onchange="updateFromInputs()">
         </div>
 
         <div class="flex justify-center gap-3 mb-10">
             <button onclick="resetTimer()" class="bg-white/10 p-3 rounded-xl hover:bg-white/20">↺</button>
-            <button id="startBtn" onclick="toggleTimer()" class="bg-white text-[#1a2b56] px-8 py-3 rounded-xl font-bold text-xs uppercase shadow-lg">Start</button>
+            <button id="startBtn" onclick="toggleTimer()" class="bg-white text-[#1a2b56] px-8 py-3 rounded-xl font-bold text-xs uppercase">Start</button>
         </div>
 
         <div class="mt-auto">
             <p class="text-[9px] uppercase tracking-widest text-blue-300/40 mb-4 font-bold">Tiempos Guardados</p>
             <div id="presetList" class="space-y-1 text-xs"></div>
-            <button onclick="saveCurrentAsPreset()" class="text-blue-400/60 text-[10px] font-bold mt-4 ml-3 hover:text-white transition-colors">+ Guardar tiempo</button>
+            <button onclick="saveCurrentAsPreset()" class="text-blue-400/60 text-[10px] font-bold mt-4 ml-3 hover:text-white transition-colors">+ Guardar tiempo actual</button>
         </div>
     </aside>
 
@@ -71,12 +79,47 @@
         <div class="max-w-5xl mx-auto">
             <header class="flex justify-between items-center mb-8">
                 <h2 class="text-2xl font-bold text-[#0d1b3e]">Configura tu sesión</h2>
+                <div class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Paso 1 de 2 • <span class="text-slate-400">Configuración</span></div>
             </header>
-            <section class="card p-8">
-                <div class="text-slate-300 text-[10px] font-bold uppercase mb-4">✏️ Tema de Práctica</div>
-                <h3 id="temaDisplay" class="text-xl font-bold text-[#0d1b3e] mb-8 italic">"Política de vivienda asequible en municipios pequeños"</h3>
-                <button class="btn-navy px-8 py-3 rounded-xl text-xs font-bold">🎲 Generar nuevo tema</button>
-            </section>
+
+            <div class="grid grid-cols-12 gap-6">
+                <section class="card p-8 col-span-12">
+                    <div class="flex items-center gap-2 text-slate-300 text-[10px] font-bold uppercase tracking-widest mb-4">
+                        <span>✏️ Tema de Práctica</span>
+                    </div>
+
+                    <h3 id="temaDisplay" class="text-2xl font-bold text-[#0d1b3e] mb-8 italic min-h-[60px]">
+                        "Selecciona categorías y genera un tema para empezar"
+                    </h3>
+                    
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-3">Filtrar por categoría:</p>
+                    <div id="contenedorCategorias" class="flex flex-wrap gap-2 mb-8">
+                        </div>
+
+                    <div class="flex flex-wrap gap-4 items-center border-t border-slate-100 pt-8 mt-4">
+    
+                    <button onclick="generarTema()" class="bg-[#0d1b3e] text-white px-8 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg hover:bg-blue-900 transition-all">
+                        🎲 Generar tema
+                    </button>
+                    
+                    <button onclick="generarTema()" class="bg-slate-100 text-slate-500 px-8 py-3 rounded-xl text-xs font-bold hover:bg-slate-200 transition-all">
+                        Siguiente tema →
+                    </button>
+                    
+                    <div class="flex-1 min-w-[320px] flex gap-2 ml-auto">
+                        <input type="text" id="inputPersonalizado" 
+                            placeholder="Escribe aquí tu propio tema..." 
+                            class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-[#0d1b3e] transition-colors">
+                        
+                        <button onclick="usarTemaPersonalizado()" 
+                                class="bg-[#0d1b3e] text-white px-6 py-3 rounded-xl text-xs font-bold hover:bg-blue-900 shadow-md transition-all whitespace-nowrap">
+                            Fijar Tema Personalizado
+                        </button>
+                    </div>
+
+                </div>
+                </section>
+            </div>
         </div>
     </main>
 
@@ -97,35 +140,11 @@
             isRunning = false;
             mode = newMode;
             document.getElementById('startBtn').innerText = 'Start';
-            
-            const btnAsc = document.getElementById('btnAsc');
-            const btnReg = document.getElementById('btnReg');
-            const selector = document.getElementById('selectorTiempo');
-            const label = document.getElementById('statusLabel');
-
-            if (mode === 'asc') {
-                // Intercambiar estilos de botones
-                btnAsc.className = "btn-mode-active text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase transition-all";
-                btnReg.className = "btn-mode-inactive text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase transition-all";
-                
-                // Ocultar selector de tiempo
-                selector.style.opacity = "0";
-                selector.style.pointerEvents = "none";
-                
-                seconds = 0;
-                label.innerText = "Cronómetro";
-            } else {
-                // Intercambiar estilos de botones
-                btnReg.className = "btn-mode-active text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase transition-all";
-                btnAsc.className = "btn-mode-inactive text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase transition-all";
-                
-                // Mostrar selector de tiempo
-                selector.style.opacity = "1";
-                selector.style.pointerEvents = "auto";
-                
-                updateFromInputs();
-                label.innerText = "Temporizador";
-            }
+            document.getElementById('btnAsc').className = mode === 'asc' ? "btn-mode-active text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase" : "btn-mode-inactive text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase";
+            document.getElementById('btnReg').className = mode === 'reg' ? "btn-mode-active text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase" : "btn-mode-inactive text-[10px] py-2 px-4 rounded-full flex-1 font-bold uppercase";
+            document.getElementById('selectorTiempo').style.opacity = mode === 'asc' ? "0" : "1";
+            document.getElementById('statusLabel').innerText = mode === 'asc' ? "Cronómetro" : "Temporizador";
+            if(mode === 'asc') seconds = 0; else updateFromInputs();
             renderTime();
         }
 
@@ -139,16 +158,10 @@
         }
 
         function toggleTimer() {
-            const btn = document.getElementById('startBtn');
-            if (isRunning) {
-                clearInterval(timer);
-                btn.innerText = 'Start';
-            } else {
-                btn.innerText = 'Pause';
-                timer = setInterval(() => {
-                    mode === 'reg' ? seconds-- : seconds++;
-                    renderTime();
-                }, 1000);
+            if (isRunning) { clearInterval(timer); document.getElementById('startBtn').innerText = 'Start'; }
+            else {
+                document.getElementById('startBtn').innerText = 'Pause';
+                timer = setInterval(() => { mode === 'reg' ? seconds-- : seconds++; renderTime(); }, 1000);
             }
             isRunning = !isRunning;
         }
@@ -159,8 +172,6 @@
             const m = Math.floor(absSecs / 60);
             const s = absSecs % 60;
             display.innerText = `${seconds < 0 ? '-' : ''}${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-
-            // Feedback visual Fucsia
             display.style.color = (mode === 'reg' && seconds < 0) ? '#ff00ff' : 'white';
         }
 
@@ -172,19 +183,27 @@
             renderTime();
         }
 
+        // --- GESTIÓN DE PRESETS MEJORADA ---
         function renderPresets() {
             const list = document.getElementById('presetList');
-            list.innerHTML = presets.map((p, i) => `
-                <div class="flex justify-between py-2 px-3 hover:bg-white/5 rounded-lg cursor-pointer group">
-                    <span onclick="applyPreset(${p.time})">${p.name}</span>
-                    <span class="font-bold opacity-40">${Math.floor(p.time/60)}:00</span>
-                </div>
-            `).join('');
+            list.innerHTML = presets.map((p, i) => {
+                const min = Math.floor(p.time / 60);
+                const sec = p.time % 60;
+                return `
+                <div class="flex justify-between items-center py-2 px-3 hover:bg-white/5 rounded-lg group transition-all">
+                    <span class="flex-1 cursor-pointer" onclick="applyPreset(${p.time})">${p.name}</span>
+                    <div class="flex gap-2 items-center">
+                        <span class="font-bold opacity-40">${min}:${String(sec).padStart(2, '0')}</span>
+                        <button onclick="editPreset(${i})" class="text-blue-300 opacity-0 group-hover:opacity-100 hover:text-white">✏️</button>
+                        <button onclick="deletePreset(${i})" class="text-red-400 opacity-0 group-hover:opacity-100 hover:text-white">✕</button>
+                    </div>
+                </div>`;
+            }).join('');
         }
 
         function applyPreset(t) {
-            document.getElementById('minInput').value = String(Math.floor(t/60)).padStart(2, '0');
-            document.getElementById('secInput').value = '00';
+            document.getElementById('minInput').value = Math.floor(t / 60);
+            document.getElementById('secInput').value = t % 60;
             setMode('reg');
         }
 
@@ -193,10 +212,161 @@
             if (name) {
                 const m = parseInt(document.getElementById('minInput').value) || 0;
                 const s = parseInt(document.getElementById('secInput').value) || 0;
-                presets.push({ name, time: (m*60)+s });
+                const totalSeconds = (m * 60) + s;
+                presets.push({ name: name, time: totalSeconds });
                 renderPresets();
             }
         }
+
+        function editPreset(index) {
+            const p = presets[index];
+            const newName = prompt("Nuevo nombre:", p.name);
+            const newTimeStr = prompt("Nuevo tiempo (Formato MM:SS):", `${Math.floor(p.time/60)}:${p.time%60}`);
+            
+            if (newName && newTimeStr) {
+                const parts = newTimeStr.split(':');
+                const total = (parseInt(parts[0]) * 60) + (parseInt(parts[1]) || 0);
+                presets[index] = { name: newName, time: total };
+                renderPresets();
+            }
+        }
+
+        function deletePreset(i) {
+            if(confirm("¿Eliminar este tiempo?")) {
+                presets.splice(i, 1);
+                renderPresets();
+            }
+        }
+                // --- BASE DE DATOS DE TEMAS ---
+        const baseDeDatos = {
+            "Política local": [
+                "La peatonalización del centro histórico",
+                "Gestión de presupuestos participativos",
+                "El futuro de las fiestas patronales",
+                "Mejora del alumbrado público y seguridad"
+            ],
+            "Economía": [
+                "Impacto de la inflación en la cesta de la compra",
+                "Fomento del emprendimiento juvenil",
+                "La crisis de la vivienda y el alquiler",
+                "Digitalización del pequeño comercio"
+            ],
+            "Educación": [
+                "Uso de móviles en las aulas",
+                "Importancia de la educación emocional",
+                "La FP dual como salida laboral",
+                "Becas de comedor y equidad escolar"
+            ],
+            "Sanidad": [
+                "Listas de espera en atención primaria",
+                "Salud mental en el sistema público",
+                "Telemedicina: ¿ventaja o barrera?",
+                "Prevención de adicciones en adolescentes"
+            ],
+            "Debate ideológico": [
+                "Límites a la libertad de expresión",
+                "El papel del Estado en la vida privada",
+                "Globalización vs. Soberanía nacional",
+                "Igualdad de oportunidades y meritocracia"
+            ],
+            "Medios de comunicación": [
+                "El impacto de las fake news en democracia",
+                "Responsabilidad de los influencers",
+                "Crisis de los medios tradicionales",
+                "Privacidad en la era de los algoritmos"
+            ]
+        };
+
+        let categoriasSeleccionadas = [];
+
+        // 1. Dibuja las categorías en pantalla
+        function renderCategorias() {
+            const contenedor = document.getElementById('contenedorCategorias');
+            if (!contenedor) return;
+            
+            contenedor.innerHTML = '';
+            
+            Object.keys(baseDeDatos).forEach(cat => {
+                const pill = document.createElement('span');
+                pill.innerText = cat;
+                
+                // Comprobar si ya estaba seleccionada para mantener el color
+                const isActive = categoriasSeleccionadas.includes(cat);
+                pill.className = `status-pill ${isActive ? 'active' : ''}`;
+                
+                // Evento de clic
+                pill.onclick = function() {
+                    if (categoriasSeleccionadas.includes(cat)) {
+                        // Si ya está, la quitamos
+                        categoriasSeleccionadas = categoriasSeleccionadas.filter(c => c !== cat);
+                        this.classList.remove('active');
+                    } else {
+                        // Si no está, la añadimos
+                        categoriasSeleccionadas.push(cat);
+                        this.classList.add('active');
+                    }
+                };
+                
+                contenedor.appendChild(pill);
+            });
+        }
+
+        // 2. Generar tema basado en lo seleccionado
+        function generarTema() {
+            const display = document.getElementById('temaDisplay');
+            
+            if (categoriasSeleccionadas.length === 0) {
+                alert("¡Ojo! Selecciona al menos una categoría arriba (haz clic en las etiquetas azules).");
+                return;
+            }
+
+            let poolTemas = [];
+            categoriasSeleccionadas.forEach(cat => {
+                poolTemas = poolTemas.concat(baseDeDatos[cat]);
+            });
+
+            const temaAleatorio = poolTemas[Math.floor(Math.random() * poolTemas.length)];
+            display.innerText = `"${temaAleatorio}"`;
+            display.classList.add('italic'); // Estilo visual de la imagen
+        }
+        function usarTemaPersonalizado() {
+            // 1. Capturamos el input y el lugar donde se muestra el tema
+            const input = document.getElementById('inputPersonalizado');
+            const display = document.getElementById('temaDisplay');
+            
+            // 2. Validamos que el usuario haya escrito algo
+            const texto = input.value.trim();
+            
+            if (texto !== "") {
+                // 3. Cambiamos el texto del titular principal
+                display.innerText = `"${texto}"`;
+                
+                // 4. Feedback visual: Limpiamos el input y le damos un efecto suave
+                input.value = "";
+                display.style.color = "#0d1b3e";
+                
+                // Opcional: Deseleccionamos categorías para que sepa que está en modo "Personalizado"
+                categoriasSeleccionadas = [];
+                const pills = document.querySelectorAll('.status-pill');
+                pills.forEach(p => p.classList.remove('active'));
+                
+                console.log("Tema personalizado fijado: " + texto);
+            } else {
+                alert("Por favor, escribe un tema antes de fijarlo.");
+            }
+        }
+
+        // Extra: Permitir que funcione también al pulsar la tecla "Enter" en el teclado
+        document.getElementById('inputPersonalizado').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                usarTemaPersonalizado();
+            }
+        });
+
+        // 3. Inicialización
+        window.addEventListener('load', () => {
+            renderCategorias(); // Esto genera las etiquetas nada más cargar la web
+        });
     </script>
 </body>
 </html>
