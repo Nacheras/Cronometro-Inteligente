@@ -36,37 +36,32 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        /* Ajustes Sidebar en móvil */
-        @media (max-width: 1023px) {
-            .sidebar {
-                width: 100%;
-                padding: 1.5rem;
-                order: 2; /* La pasamos abajo para que el cronómetro mande arriba */
-            }
-            main {
-                padding: 1rem;
-                order: 1;
-            }
+        @media (max-width: 768px) {
             #timerGigante {
-                font-size: 25vw; /* Tamaño dinámico según ancho de pantalla */
+                font-size: 20vw; /* El tamaño se ajusta al ancho de la pantalla del móvil */
             }
             .card {
-                padding: 1.5rem;
+                padding: 1.5rem !important; /* Menos padding en móvil para ganar espacio */
             }
-            /* Ocultamos elementos secundarios en móvil para no saturar */
-            .sidebar h1, .sidebar p:first-of-type { display: none; }
-        }
-
-        /* Optimización del modo enfoque para lectura vertical */
-        #modoEnfoque {
-            min-height: 40vh;
-            transition: all 0.4s ease;
+            .sidebar {
+                position: fixed;
+                z-index: 50;
+                height: 100vh;
+            }
         }
     </style>
 </head>
-<body class="flex min-h-screen">
+<body class="flex flex-col md:flex-row min-h-screen">
 
-    <aside class="sidebar w-[320px] text-white p-8 flex flex-col shrink-0">
+    <div class="md:hidden bg-[#1a2b56] text-white p-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <div class="bg-white text-[#1a2b56] font-bold w-6 h-6 flex items-center justify-center rounded text-xs">R</div>
+            <span class="tracking-widest text-[10px] font-bold uppercase">Retorika</span>
+        </div>
+        <button onclick="toggleMobileMenu()" class="p-2">☰</button>
+    </div>
+
+    <aside id="sidebar" class="sidebar w-full md:w-[320px] text-white p-8 hidden md:flex flex-col shrink-0">
         <div class="flex items-center gap-2 mb-12">
             <div class="bg-white text-[#1a2b56] font-bold w-7 h-7 flex items-center justify-center rounded text-sm">R</div>
             <span class="tracking-widest text-xs font-bold opacity-60 uppercase">Retorika</span>
@@ -102,12 +97,11 @@
         </div>
     </aside>
 
-    <main class="flex-1 p-12 overflow-y-auto">
+    <main class="flex-1 p-4 md:p-12 overflow-y-auto">
         <div class="max-w-5xl mx-auto">
-
-            <div id="modoEnfoque" class="hidden flex-col items-center justify-center py-20 mb-10 bg-white rounded-3xl shadow-inner border-2 border-dashed border-slate-100">
-                <span id="timerGigante" class="text-[12rem] font-black tracking-tighter leading-none text-[#0d1b3e]">03:00</span>
-                <p id="temaEnfoque" class="text-xl text-slate-400 italic mt-4 font-medium"></p>
+            <div id="modoEnfoque" class="hidden flex-col items-center justify-center py-10 md:py-20 mb-10 bg-white rounded-3xl shadow-inner border-2 border-dashed border-slate-100 text-center">
+                <span id="timerGigante" class="text-[5rem] md:text-[12rem] font-black tracking-tighter leading-none text-[#0d1b3e]">03:00</span>
+                <p id="temaEnfoque" class="text-sm md:text-xl text-slate-400 italic mt-4 font-medium px-4"></p>
             </div>
 
             <header class="flex justify-between items-center mb-8">
@@ -115,7 +109,7 @@
                 <div class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Paso 1 de 2 • <span class="text-slate-400">Configuración</span></div>
             </header>
 
-            <div class="grid grid-cols-12 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
                 <section class="card p-8 col-span-12">
                     <div class="flex items-center gap-2 text-slate-300 text-[10px] font-bold uppercase tracking-widest mb-4">
                         <span>✏️ Tema de Práctica</span>
@@ -190,27 +184,37 @@
             }
         }
 
+        // Función para el menú hamburguesa en móvil
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar.classList.contains('hidden')) {
+                sidebar.classList.remove('hidden');
+                sidebar.classList.add('flex');
+            } else {
+                sidebar.classList.add('hidden');
+                sidebar.classList.remove('flex');
+            }
+        }
+
+        // Modificación en toggleTimer para que cierre el menú al empezar en móvil
         function toggleTimer() {
             const btn = document.getElementById('startBtn');
             const modoEnfoque = document.getElementById('modoEnfoque');
-            const gridConfig = document.querySelector('.grid'); // El contenedor de tus tarjetas
+            const gridConfig = document.querySelector('.grid');
             const temaActual = document.getElementById('temaDisplay').innerText;
 
             if (isRunning) {
                 clearInterval(timer);
                 btn.innerText = 'Start';
-                
             } else {
-                // ACTIVAR MODO ENFOQUE
-                // Si es móvil, hacemos scroll suave hacia el cronómetro
-                if (window.innerWidth < 1024) {
-                    window.scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
-                    });
+                // En móvil, si empezamos a entrenar, cerramos el menú lateral para ver el tiempo
+                if (window.innerWidth < 768) {
+                    document.getElementById('sidebar').classList.add('hidden');
+                }
+
                 modoEnfoque.classList.remove('hidden');
                 modoEnfoque.classList.add('flex');
-                gridConfig.classList.add('opacity-20'); // Difuminamos el resto
+                gridConfig.classList.add('opacity-20');
                 document.getElementById('temaEnfoque').innerText = temaActual;
 
                 btn.innerText = 'Pause';
