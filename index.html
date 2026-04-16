@@ -35,6 +35,33 @@
             color: white !important; 
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
+
+        /* Ajustes Sidebar en móvil */
+        @media (max-width: 1023px) {
+            .sidebar {
+                width: 100%;
+                padding: 1.5rem;
+                order: 2; /* La pasamos abajo para que el cronómetro mande arriba */
+            }
+            main {
+                padding: 1rem;
+                order: 1;
+            }
+            #timerGigante {
+                font-size: 25vw; /* Tamaño dinámico según ancho de pantalla */
+            }
+            .card {
+                padding: 1.5rem;
+            }
+            /* Ocultamos elementos secundarios en móvil para no saturar */
+            .sidebar h1, .sidebar p:first-of-type { display: none; }
+        }
+
+        /* Optimización del modo enfoque para lectura vertical */
+        #modoEnfoque {
+            min-height: 40vh;
+            transition: all 0.4s ease;
+        }
     </style>
 </head>
 <body class="flex min-h-screen">
@@ -77,6 +104,12 @@
 
     <main class="flex-1 p-12 overflow-y-auto">
         <div class="max-w-5xl mx-auto">
+
+            <div id="modoEnfoque" class="hidden flex-col items-center justify-center py-20 mb-10 bg-white rounded-3xl shadow-inner border-2 border-dashed border-slate-100">
+                <span id="timerGigante" class="text-[12rem] font-black tracking-tighter leading-none text-[#0d1b3e]">03:00</span>
+                <p id="temaEnfoque" class="text-xl text-slate-400 italic mt-4 font-medium"></p>
+            </div>
+
             <header class="flex justify-between items-center mb-8">
                 <h2 class="text-2xl font-bold text-[#0d1b3e]">Configura tu sesión</h2>
                 <div class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Paso 1 de 2 • <span class="text-slate-400">Configuración</span></div>
@@ -158,30 +191,70 @@
         }
 
         function toggleTimer() {
-            if (isRunning) { clearInterval(timer); document.getElementById('startBtn').innerText = 'Start'; }
-            else {
-                document.getElementById('startBtn').innerText = 'Pause';
-                timer = setInterval(() => { mode === 'reg' ? seconds-- : seconds++; renderTime(); }, 1000);
+            const btn = document.getElementById('startBtn');
+            const modoEnfoque = document.getElementById('modoEnfoque');
+            const gridConfig = document.querySelector('.grid'); // El contenedor de tus tarjetas
+            const temaActual = document.getElementById('temaDisplay').innerText;
+
+            if (isRunning) {
+                clearInterval(timer);
+                btn.innerText = 'Start';
+                
+            } else {
+                // ACTIVAR MODO ENFOQUE
+                // Si es móvil, hacemos scroll suave hacia el cronómetro
+                if (window.innerWidth < 1024) {
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                modoEnfoque.classList.remove('hidden');
+                modoEnfoque.classList.add('flex');
+                gridConfig.classList.add('opacity-20'); // Difuminamos el resto
+                document.getElementById('temaEnfoque').innerText = temaActual;
+
+                btn.innerText = 'Pause';
+                timer = setInterval(() => {
+                    mode === 'reg' ? seconds-- : seconds++;
+                    renderTime();
+                }, 1000);
             }
             isRunning = !isRunning;
         }
 
-        function renderTime() {
-            const display = document.getElementById('timerDisplay');
-            const absSecs = Math.abs(seconds);
-            const m = Math.floor(absSecs / 60);
-            const s = absSecs % 60;
-            display.innerText = `${seconds < 0 ? '-' : ''}${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-            display.style.color = (mode === 'reg' && seconds < 0) ? '#ff00ff' : 'white';
-        }
-
+        // En la función resetTimer añade esto para volver a la normalidad:
         function resetTimer() {
             clearInterval(timer);
             isRunning = false;
             document.getElementById('startBtn').innerText = 'Start';
+            
+            // DESACTIVAR MODO ENFOQUE
+            document.getElementById('modoEnfoque').classList.add('hidden');
+            document.querySelector('.grid').classList.remove('opacity-20');
+            
             mode === 'reg' ? updateFromInputs() : (seconds = 0);
             renderTime();
         }
+
+        function renderTime() {
+            const displayLateral = document.getElementById('timerDisplay');
+            const displayGigante = document.getElementById('timerGigante');
+            
+            const absSecs = Math.abs(seconds);
+            const m = Math.floor(absSecs / 60);
+            const s = absSecs % 60;
+            const tiempoFormateado = `${seconds < 0 ? '-' : ''}${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            
+            // Actualizamos ambos relojes
+            displayLateral.innerText = tiempoFormateado;
+            displayGigante.innerText = tiempoFormateado;
+
+            // Feedback visual Fucsia en ambos
+            const color = (mode === 'reg' && seconds < 0) ? '#ff00ff' : '#0d1b3e';
+            displayLateral.style.color = (mode === 'reg' && seconds < 0) ? '#ff00ff' : 'white';
+            displayGigante.style.color = color;
+        }
+
 
         // --- GESTIÓN DE PRESETS MEJORADA ---
         function renderPresets() {
