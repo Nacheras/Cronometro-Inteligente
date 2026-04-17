@@ -13,6 +13,7 @@
         .btn-mode-inactive { background-color: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); }
         .btn-mode-active { background-color: white; color: #1a2b56; }
         .time-input { background: rgba(255,255,255,0.1); border: none; border-radius: 0.5rem; width: 60px; height: 45px; text-align: center; font-size: 1.25rem; font-weight: bold; color: white; }
+        .active-intensidad { background-color: #0d1b3e !important; color: white !important; }
         /* Estilo para las píldoras de categorías */
         .status-pill { 
             background: #eef2ff; 
@@ -110,21 +111,19 @@
             </header>
 
             <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-                <section class="card p-8 col-span-12">
-                    <div class="flex items-center gap-2 text-slate-300 text-[10px] font-bold uppercase tracking-widest mb-4">
-                        <span>✏️ Tema de Práctica</span>
-                    </div>
+            <section class="card p-8 col-span-12">
+                <div class="flex items-center gap-2 text-slate-300 text-[10px] font-bold uppercase tracking-widest mb-4">
+                    <span>✏️ Tema de Práctica</span>
+                </div>
 
-                    <h3 id="temaDisplay" class="text-2xl font-bold text-[#0d1b3e] mb-8 italic min-h-[60px]">
-                        "Selecciona categorías y genera un tema para empezar"
-                    </h3>
-                    
-                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-3">Filtrar por categoría:</p>
-                    <div id="contenedorCategorias" class="flex flex-wrap gap-2 mb-8">
-                        </div>
+                <h3 id="temaDisplay" class="text-2xl font-bold text-[#0d1b3e] mb-8 italic min-h-[60px]">
+                    "Selecciona categorías y genera un tema para empezar"
+                </h3>
+                
+                <p class="text-[10px] font-bold text-slate-400 uppercase mb-3">Filtrar por categoría:</p>
+                <div id="contenedorCategorias" class="flex flex-wrap gap-2 mb-8"></div>
 
-                    <div class="flex flex-wrap gap-4 items-center border-t border-slate-100 pt-8 mt-4">
-    
+                <div class="flex flex-wrap gap-4 items-center border-t border-slate-100 pt-8 mt-4">
                     <button onclick="generarTema()" class="bg-[#0d1b3e] text-white px-8 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg hover:bg-blue-900 transition-all">
                         🎲 Generar tema
                     </button>
@@ -143,9 +142,24 @@
                             Fijar Tema Personalizado
                         </button>
                     </div>
-
                 </div>
-                </section>
+            </section>
+
+            <section class="card p-6 col-span-12 md:col-span-4">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="text-slate-300 text-[9px] font-bold uppercase tracking-widest">🔊 Simulador de presión</div>
+                    <input type="checkbox" id="presionToggle" class="w-10 h-5 accent-[#0d1b3e] cursor-pointer" onchange="togglePresion()">
+                </div>
+                <p class="font-bold text-[#0d1b3e] mb-4 text-xs">Entorno real</p>
+                <div class="flex bg-slate-50 p-1 rounded-lg mb-4">
+                    <button id="intensidadBaja" onclick="setIntensidad(8000)" class="flex-1 py-1.5 rounded-md text-[10px] font-bold text-slate-400">Baja</button>
+                    <button id="intensidadMedia" onclick="setIntensidad(4000)" class="flex-1 py-1.5 rounded-md text-[10px] font-bold active-intensidad shadow-sm">Media</button>
+                    <button id="intensidadAlta" onclick="setIntensidad(2000)" class="flex-1 py-1.5 rounded-md text-[10px] font-bold text-slate-400">Alta</button>
+                </div>
+                <p class="text-[9px] text-slate-400 leading-relaxed">Reproduce ruidos ambientales (tos, murmullos) de forma aleatoria para entrenar con distracciones.</p>
+            </section>
+
+            
             </div>
         </div>
     </main>
@@ -444,6 +458,90 @@
         window.addEventListener('load', () => {
             renderCategorias(); // Esto genera las etiquetas nada más cargar la web
         });
+
+        let intervaloPresion;
+        let frecuenciaPresion = 4000; // Media por defecto (ms)
+        let presionActiva = false;
+
+        // 1. Configurar Intensidad
+        function setIntensidad(ms) {
+            frecuenciaPresion = ms;
+            
+            // Feedback visual en botones
+            document.getElementById('intensidadBaja').classList.toggle('active-intensidad', ms === 8000);
+            document.getElementById('intensidadMedia').classList.toggle('active-intensidad', ms === 4000);
+            document.getElementById('intensidadAlta').classList.toggle('active-intensidad', ms === 2000);
+            
+            // Si ya está sonando, reiniciamos el intervalo con la nueva frecuencia
+            if (presionActiva) {
+                pararPresion();
+                iniciarPresion();
+            }
+        }
+
+        // 2. Control del simulador
+        function togglePresion() {
+            presionActiva = document.getElementById('presionToggle').checked;
+            if (presionActiva && isRunning) {
+                iniciarPresion();
+            } else {
+                pararPresion();
+            }
+        }
+
+        function iniciarPresion() {
+            if (!presionActiva) return;
+            
+            intervaloPresion = setInterval(() => {
+                if (isRunning) { // Solo suena si el cronómetro está avanzando
+                    reproducirSonidoDistraccion();
+                }
+            }, frecuenciaPresion);
+        }
+
+        function pararPresion() {
+            clearInterval(intervaloPresion);
+        }
+
+        // 3. Sintetizador de sonidos (Tos/Murmullos)
+        function reproducirSonidoDistraccion() {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            // Simulamos diferentes tipos de sonidos aleatorios
+            const tipo = Math.random();
+            
+            if (tipo > 0.7) { // Simular una "tos" (golpe seco de frecuencia baja)
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            } else { // Simular "cuchicheo" (ruido blanco filtrado)
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(Math.random() * 500 + 200, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+            }
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        // Modificación necesaria en tu toggleTimer() existente:
+        // Añade estas líneas dentro de la lógica de "empezar" y "pausar":
+        /*
+        if (isRunning) { 
+            ...
+            if (presionActiva) iniciarPresion(); 
+        } else { 
+            ... 
+            pararPresion(); 
+        }
+        */
     </script>
 </body>
 </html>
