@@ -333,6 +333,12 @@
                 sidebar.classList.remove('fixed', 'inset-0', 'z-50', 'w-full', 'flex');
             }
         }
+        // Función para volver al configurador sin resetear el tiempo
+        function closeSidebarMobile() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.add('hidden');
+            sidebar.classList.remove('fixed', 'inset-0', 'z-50', 'w-full', 'flex');
+        }
 
         // Modificación en toggleTimer para que cierre el menú al empezar en móvil
         function toggleTimer() {
