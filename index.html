@@ -406,6 +406,7 @@
             
             mode === 'reg' ? updateFromInputs() : (seconds = 0);
             renderTime();
+            actualizarBotonMovil();
         }
 
         function renderTime() {
@@ -1277,25 +1278,32 @@
         // Inicializar interfaz al cargar
         actualizarInterfazEntrenamiento();
 
-// Esta función decide qué hacer según si el cronómetro corre o no
-function accionPrincipalMovil() {
-    if (!isRunning) {
-        // Si está parado: Abrimos cronómetro y empezamos
-        toggleMobileMenu();
-        toggleTimer();
-    } else {
-        // Si ya está funcionando: Cerramos el menú azul para que vea la configuración
-        closeSidebarMobile();
-        // Opcional: Hacer scroll suave hacia arriba para que vea los ajustes
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Esta función decide qué hacer según si el cronómetro corre o no
+    function accionPrincipalMovil() {
+        const sidebar = document.getElementById('sidebar');
+        const isVisible = !sidebar.classList.contains('hidden');
+
+        if (!isVisible) {
+            // Si el cronómetro está oculto, lo mostramos para que el usuario lo vea
+            // PERO no llamamos a toggleTimer(), así no se reanuda solo
+            toggleMobileMenu();
+        } else {
+            // Si el cronómetro ya se está viendo, el botón sirve para volver a la configuración
+            closeSidebarMobile();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // Actualizamos el texto para que siempre coincida con el estado real
+        actualizarBotonMovil();
     }
-    actualizarBotonMovil();
-}
 
     // Función para cambiar el texto del botón según el estado
     function actualizarBotonMovil() {
         const btn = document.getElementById('btnMovilAccion');
+        const sidebar = document.getElementById('sidebar');
         if (!btn) return;
+
+        const isVisible = !sidebar.classList.contains('hidden');
 
         if (isRunning) {
             btn.innerHTML = '<span>⚙️</span> Configurar cronómetro';
